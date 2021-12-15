@@ -18,6 +18,7 @@ import java.security.ProtectionDomain;
 import java.util.*;
 
 public final class PlanetsPanelInjector {
+    private static final float PLACEHOLDER_OPACITY = 0.45f;
     private static final Logger logger = Logger.getLogger(CoreUIWatchScript.class);
 
     private static PlanetsPanelAccess acc_PlanetsPanel;
@@ -56,41 +57,47 @@ public final class PlanetsPanelInjector {
         UIPanelAPI oldFilter = acc_PlanetsPanel.getPlanetFilter(planetsPanel);
         if (oldFilter == null || oldFilter.getClass() == expandablePlanetFilter) return;
 
-        final UIComponentAPI textBox = acc_TextBox.newInstance("", Fonts.DEFAULT_SMALL, false, null);
-        final LabelAPI placeholder = acc_Label.create("Search...", Misc.getTextColor());
-        acc_Label.setOpacity(placeholder, 0.45f);
-        ((UIPanelAPI) textBox).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
-
-        final SortablePlanetListAccess access_PlanetList = acc_SortablePlanetList; // avoid synthetic accessors
-        final UIPanelAccess access_UIPanel = acc_UIPanel;
-        final TextBoxAccess access_TextBox = acc_TextBox;
-        final LabelAccess access_Label = acc_Label;
         class SearchBoxHandler implements InvocationHandler {
+            UIComponentAPI textBox;
+            LabelAPI placeholder;
+
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 String methodName = method.getName();
-                if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName)) {
-                    access_Label.setOpacity(placeholder, access_TextBox.getText(textBox).trim().isEmpty() ? 0.45f : 0f);
-                    access_PlanetList.recreateList(planetList, null);
+                if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName) ||
+                    "actionPerformed".equals(methodName)) {
+                    updateSearchBox(planetList, textBox, placeholder);
                 }
                 return method.getDeclaringClass() == Object.class ? method.invoke(this, args) : null;
             }
         }
 
-        acc_TextBox.setTextListener(textBox, Proxy.newProxyInstance(SearchBoxHandler.class.getClassLoader(),
-                new Class<?>[] { acc_TextBox.textListenerType() }, new SearchBoxHandler()));
+        SearchBoxHandler handler = new SearchBoxHandler();
+        Object listener = Proxy.newProxyInstance(SearchBoxHandler.class.getClassLoader(),
+                new Class<?>[] { acc_TextBox.actionListenerType(), acc_TextBox.textListenerType() }, handler);
 
-        class SearchBoxPlanetFilterPlugin implements PlanetFilterPlugin {
+        final UIComponentAPI textBox = acc_TextBox.newInstance("", Fonts.DEFAULT_SMALL, listener);
+        acc_TextBox.setTextListener(textBox, listener);
+        acc_TextBox.setUndoOnEscape(textBox, false);
+
+        final LabelAPI placeholder = acc_Label.create("Search...", Misc.getTextColor());
+        acc_Label.setOpacity(placeholder, PLACEHOLDER_OPACITY);
+        ((UIPanelAPI) textBox).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
+
+        handler.textBox = textBox;
+        handler.placeholder = placeholder;
+
+        class SearchBoxFilterPlugin implements PlanetFilterPlugin {
             @Override
             public void afterSizeFirstChanged(UIPanelAPI panel, float width, float height) {
-                List<UIComponentAPI> children = access_UIPanel.getChildrenNonCopy(panel);
+                List<UIComponentAPI> children = acc_UIPanel.getChildrenNonCopy(panel);
                 UIComponentAPI last = children.get(children.size() - 1);
                 panel.addComponent(textBox).setSize(width, 25f).belowLeft(last, 20f);
             }
 
             @Override
             public List<SectorEntityToken> getFilteredList(UIPanelAPI panel, List<SectorEntityToken> list) {
-                String search = access_TextBox.getText(textBox).trim().toLowerCase(Locale.ROOT);
+                String search = acc_TextBox.getText(textBox).trim().toLowerCase(Locale.ROOT);
                 if (search.isEmpty()) return list;
 
                 List<SectorEntityToken> filtered = new ArrayList<>(list.size());
@@ -106,7 +113,7 @@ public final class PlanetsPanelInjector {
         UIPanelAPI filter;
         try {
             filter = (UIPanelAPI) expandablePlanetFilterCtor.invoke(planetsPanel,
-                    Collections.singletonList(new SearchBoxPlanetFilterPlugin()));
+                    Collections.singletonList(new SearchBoxFilterPlugin()));
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {
@@ -121,6 +128,11 @@ public final class PlanetsPanelInjector {
         acc_SortablePlanetList.setPlanetFilter(planetList, filter);
         acc_UIPanel.remove(planetsPanel, oldFilter);
         planetsPanel.addComponent(filter);
+    }
+
+    private static void updateSearchBox(UIPanelAPI planetList, UIComponentAPI textBox, LabelAPI placeholder) {
+        acc_Label.setOpacity(placeholder, acc_TextBox.getText(textBox).trim().isEmpty() ? PLACEHOLDER_OPACITY : 0f);
+        acc_SortablePlanetList.recreateList(planetList, null);
     }
 
     /**

@@ -18,6 +18,7 @@ public class TextBoxAccess {
     private final MethodHandle ctor;
     private final MethodHandle m_getText;
     private final MethodHandle m_setTextListener;
+    private final MethodHandle m_setUndoOnEscape;
 
     @SuppressWarnings("unchecked")
     public TextBoxAccess() throws ReflectiveOperationException {
@@ -41,12 +42,14 @@ public class TextBoxAccess {
         this.labelType = (Class<? extends LabelAPI>) textBoxType.getMethod("getTextLabel").getReturnType();
 
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-        Constructor<?> ctor = ReflectionUtil.getFirstConstructorByParameterCount(textBoxType, 4);
+        Constructor<?> ctor = ReflectionUtil.getFirstConstructorByParameterCount(textBoxType, 3);
         ReflectionUtil.trySetAccessible(ctor);
         this.ctor = lookup.unreflectConstructor(ctor);
         this.m_getText = lookup.findVirtual(textBoxType, "getText", MethodType.methodType(String.class));
         this.m_setTextListener = lookup.findVirtual(textBoxType, "setTextListener",
                 MethodType.methodType(void.class, textListenerType));
+        this.m_setUndoOnEscape = lookup.findVirtual(textBoxType, "setUndoOnEscape",
+                MethodType.methodType(void.class, boolean.class));
     }
 
     public Class<? extends UIComponentAPI> textBoxType() {
@@ -57,13 +60,17 @@ public class TextBoxAccess {
         return textListenerType;
     }
 
+    public Class<?> actionListenerType() {
+        return ctor.type().parameterType(2);
+    }
+
     public Class<? extends LabelAPI> labelType() {
         return labelType;
     }
 
-    public UIComponentAPI newInstance(String text, String font, boolean unknown, @Nullable Object blurListener) {
+    public UIComponentAPI newInstance(String text, String font, @Nullable Object blurListener) {
         try {
-            return (UIComponentAPI) this.ctor.invoke(text, font, unknown, blurListener);
+            return (UIComponentAPI) this.ctor.invoke(text, font, blurListener);
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {
@@ -84,6 +91,16 @@ public class TextBoxAccess {
     public void setTextListener(UIComponentAPI textBox, @Nullable Object listener) {
         try {
             this.m_setTextListener.invoke(textBox, listener);
+        } catch (RuntimeException | Error ex) {
+            throw ex;
+        } catch (Throwable t) {
+            throw new AssertionError("unreachable", t);
+        }
+    }
+
+    public void setUndoOnEscape(UIComponentAPI textBox, boolean undoOnEscape) {
+        try {
+            this.m_setUndoOnEscape.invoke(textBox, undoOnEscape);
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {
