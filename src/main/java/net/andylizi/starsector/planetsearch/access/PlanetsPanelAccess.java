@@ -1,6 +1,5 @@
 package net.andylizi.starsector.planetsearch.access;
 
-import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;

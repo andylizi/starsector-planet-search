@@ -3,9 +3,7 @@ package net.andylizi.starsector.planetsearch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.Arrays;
 

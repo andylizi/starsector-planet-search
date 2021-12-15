@@ -10,6 +10,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * An expandable planet filter that supports {@link PlanetFilterPlugin filter plugins}.
+ * <p>
+ * Note: <code>com.fs.starfarer.campaign.ui.intel.{PlanetFilter,PlanetsPanel}</code> are placeholder types.
+ * They don't exist at runtime because it's obfuscated. When loading this class,
+ * we need to replace all references to them with actual ones. The is done in {@link ClassConstantTransformer}.
+ */
 public class ExpandablePlanetFilter extends PlanetFilter {
     private final List<PlanetFilterPlugin> plugins;
 

@@ -2,6 +2,7 @@ package net.andylizi.starsector.planetsearch;
 
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.ui.*;
+import com.fs.starfarer.api.util.Misc;
 import net.andylizi.starsector.planetsearch.access.*;
 import org.apache.log4j.Logger;
 
@@ -14,10 +15,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class PlanetsPanelInjector {
     private static final Logger logger = Logger.getLogger(CoreUIWatchScript.class);
@@ -26,6 +24,7 @@ public final class PlanetsPanelInjector {
     private static SortablePlanetListAccess acc_SortablePlanetList;
     private static UIPanelAccess acc_UIPanel;
     private static TextBoxAccess acc_TextBox;
+    private static LabelAccess acc_Label;
     private static PositionAccess acc_Position;
 
     private static Class<?> expandablePlanetFilter;
@@ -37,11 +36,13 @@ public final class PlanetsPanelInjector {
                 acc_PlanetsPanel.sortablePlanetListType(), acc_PlanetsPanel.planetFilterType());
         if (acc_UIPanel == null) acc_UIPanel = new UIPanelAccess(planetsPanel.getClass());
         if (acc_TextBox == null) acc_TextBox = new TextBoxAccess();
+        if (acc_Label == null) acc_Label = new LabelAccess(acc_TextBox.labelType());
 
         if (expandablePlanetFilter == null) {
             try {
-                expandablePlanetFilter = loadCustomFilterClass(acc_PlanetsPanel.planetFilterType(),
-                        acc_PlanetsPanel.planetsPanelType());
+                String className = PlanetsPanelInjector.class.getPackage().getName().concat(".ExpandablePlanetFilter");
+                expandablePlanetFilter = loadCustomFilterClass(className,
+                        acc_PlanetsPanel.planetFilterType(), acc_PlanetsPanel.planetsPanelType());
             } catch (IOException | IllegalClassFormatException | NullPointerException e) {
                 logger.error("Failed to transform SearchablePlanetFilter", e);
                 return;
@@ -56,14 +57,20 @@ public final class PlanetsPanelInjector {
         if (oldFilter == null || oldFilter.getClass() == expandablePlanetFilter) return;
 
         final UIComponentAPI textBox = acc_TextBox.newInstance("", Fonts.DEFAULT_SMALL, false, null);
+        final LabelAPI placeholder = acc_Label.create("Search...", Misc.getTextColor());
+        acc_Label.setOpacity(placeholder, 0.45f);
+        ((UIPanelAPI) textBox).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
+
         final SortablePlanetListAccess access_PlanetList = acc_SortablePlanetList; // avoid synthetic accessors
         final UIPanelAccess access_UIPanel = acc_UIPanel;
         final TextBoxAccess access_TextBox = acc_TextBox;
+        final LabelAccess access_Label = acc_Label;
         class SearchBoxHandler implements InvocationHandler {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 String methodName = method.getName();
                 if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName)) {
+                    access_Label.setOpacity(placeholder, access_TextBox.getText(textBox).trim().isEmpty() ? 0.45f : 0f);
                     access_PlanetList.recreateList(planetList, null);
                 }
                 return method.getDeclaringClass() == Object.class ? method.invoke(this, args) : null;
@@ -78,17 +85,17 @@ public final class PlanetsPanelInjector {
             public void afterSizeFirstChanged(UIPanelAPI panel, float width, float height) {
                 List<UIComponentAPI> children = access_UIPanel.getChildrenNonCopy(panel);
                 UIComponentAPI last = children.get(children.size() - 1);
-                panel.addComponent(textBox).setSize(width, 25f).belowLeft(last, 10f);
+                panel.addComponent(textBox).setSize(width, 25f).belowLeft(last, 20f);
             }
 
             @Override
             public List<SectorEntityToken> getFilteredList(UIPanelAPI panel, List<SectorEntityToken> list) {
-                String search = access_TextBox.getText(textBox).trim();
+                String search = access_TextBox.getText(textBox).trim().toLowerCase(Locale.ROOT);
                 if (search.isEmpty()) return list;
 
                 List<SectorEntityToken> filtered = new ArrayList<>(list.size());
                 for (SectorEntityToken entity : list) {
-                    if (entity.getName().contains(search)) {
+                    if (entity.getName().toLowerCase(Locale.ROOT).contains(search)) {
                         filtered.add(entity);
                     }
                 }
@@ -116,7 +123,14 @@ public final class PlanetsPanelInjector {
         planetsPanel.addComponent(filter);
     }
 
-    private static Class<?> loadCustomFilterClass(Class<?> planetFilterType, Class<?> planetsPanelType)
+    /**
+     * @see ExpandablePlanetFilter
+     */
+    private static Class<?> loadCustomFilterClass(
+            String className,
+            Class<?> planetFilterType,
+            Class<?> planetsPanelType
+    )
             throws IOException, IllegalClassFormatException, ReflectiveOperationException {
         String planetFilterFrom = "com/fs/starfarer/campaign/ui/intel/PlanetFilter",
                 planetsPanelFrom = "com/fs/starfarer/campaign/ui/intel/PlanetsPanel";
@@ -124,7 +138,6 @@ public final class PlanetsPanelInjector {
                 planetsPanelTo = planetsPanelType.getName().replace('.', '/');
 
         ClassLoader cl = PlanetsPanelInjector.class.getClassLoader();
-        String className = PlanetsPanelInjector.class.getPackage().getName().concat(".ExpandablePlanetFilter");
         byte[] data = ClassConstantTransformer.readClassBuffer(cl, className);
         data = new ClassConstantTransformer(Arrays.asList(
                 ClassConstantTransformer.newTransform(planetFilterFrom, planetFilterTo),

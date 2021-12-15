@@ -4,8 +4,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public final class ReflectionUtil {
     private static final MethodHandle TRY_SET_ACCESSIBLE;

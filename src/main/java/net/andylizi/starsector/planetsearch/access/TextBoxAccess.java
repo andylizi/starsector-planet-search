@@ -1,5 +1,6 @@
 package net.andylizi.starsector.planetsearch.access;
 
+import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
@@ -9,11 +10,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 public class TextBoxAccess {
     private final Class<? extends UIComponentAPI> textBoxType;
     private final Class<?> textListenerType;
+    private final Class<? extends LabelAPI> labelType;
     private final MethodHandle ctor;
     private final MethodHandle m_getText;
     private final MethodHandle m_setTextListener;
@@ -37,6 +38,7 @@ public class TextBoxAccess {
         if (textBoxType == null) throw new ClassNotFoundException("TextBox");
         this.textBoxType = (Class<? extends UIComponentAPI>) textBoxType;
         this.textListenerType = textBoxType.getMethod("getTextListener").getReturnType();
+        this.labelType = (Class<? extends LabelAPI>) textBoxType.getMethod("getTextLabel").getReturnType();
 
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
         Constructor<?> ctor = ReflectionUtil.getFirstConstructorByParameterCount(textBoxType, 4);
@@ -53,6 +55,10 @@ public class TextBoxAccess {
 
     public Class<?> textListenerType() {
         return textListenerType;
+    }
+
+    public Class<? extends LabelAPI> labelType() {
+        return labelType;
     }
 
     public UIComponentAPI newInstance(String text, String font, boolean unknown, @Nullable Object blurListener) {
