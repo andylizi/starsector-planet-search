@@ -1,0 +1,11 @@
+{
+    "id": "planet_search",
+    "name": "PlanetSearch",
+    "author": "andylizi",
+    "utility": "true",
+    "version": "${project.version}",
+    "description": "Add a search box to the planet list.",
+    "gameVersion": "${starsector.version}",
+    "jars": ["jars/${project.build.finalName}.jar"],
+    "modPlugin": "net.andylizi.starsector.planetsearch.PluginMain"
+}
