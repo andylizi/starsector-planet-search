@@ -1,7 +1,7 @@
 ## Planet Search
 
 This is a mod for the game [Starsector](https://fractalsoftworks.com/).
-It shows a minimap besides the dialog when it asks you to accept a mission.
+It adds a search box to the planet list.
 
 ![Screenshot](https://i.imgur.com/haEb5DZ.png)
 
