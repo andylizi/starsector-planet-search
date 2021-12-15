@@ -9,6 +9,7 @@ import net.andylizi.starsector.planetsearch.access.CoreUIAccess;
 import net.andylizi.starsector.planetsearch.access.IntelPanelAccess;
 import net.andylizi.starsector.planetsearch.access.TripadButtonPanelAccess;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -21,40 +22,68 @@ public final class CoreUIInjector {
     private static TripadButtonPanelAccess acc_TripadButtonPanel;
     private static ButtonAccess acc_Button;
 
-    public static void inject(final CoreUIAPI coreUI) throws ReflectiveOperationException {
+    public static boolean inject(CoreUIAPI coreUI) throws ReflectiveOperationException {
         if (acc_CoreUI == null) acc_CoreUI = new CoreUIAccess(coreUI.getClass());
         UIPanelAPI buttons = acc_CoreUI.getButtons(coreUI);
 
         if (acc_TripadButtonPanel == null) acc_TripadButtonPanel = new TripadButtonPanelAccess(buttons.getClass());
         ButtonAPI intelButton = acc_TripadButtonPanel.getButton(buttons, CoreUITabId.INTEL);
-        if (intelButton == null) return;
+        if (intelButton == null) return false;
 
         if (acc_Button == null) acc_Button = new ButtonAccess(intelButton.getClass());
-        final Object originalListener = acc_Button.getListener(intelButton);
+        Object originalListener = acc_Button.getListener(intelButton);
         if (Proxy.isProxyClass(originalListener.getClass())) {
-            return; // already injected
+            return false; // already injected
         }
 
-        final CoreUIAccess access_CoreUI = acc_CoreUI; // avoid synthetic accessors
-        class IntelButtonHandler implements InvocationHandler {
-            @Override
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                // ActionListener interface only has one method: actionPerformed().
-                // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
-                // which then updates the currentTab. And that's our target here.
-                Object result = method.invoke(originalListener, args);
-                UIPanelAPI currentTab = access_CoreUI.getCurrentTab(coreUI);
-                if (currentTab != null) {
-                    injectIntelPanel(currentTab);
-                }
-                return result;
-            }
-        }
-
+        IntelButtonHandler handler = new IntelButtonHandler(coreUI, originalListener);
         Object newListener = Proxy.newProxyInstance(originalListener.getClass().getClassLoader(),
-                new Class<?>[] { acc_Button.actionListenerType() }, new IntelButtonHandler());
+                new Class<?>[] { acc_Button.actionListenerType() }, handler);
         acc_Button.setListener(intelButton, newListener);
         logger.info("CoreUI injected");
+        return true;
+    }
+
+    public static boolean uninject(CoreUIAPI coreUI) {
+        if (acc_CoreUI == null || acc_TripadButtonPanel == null || acc_Button == null) return false;
+
+        UIPanelAPI buttons = acc_CoreUI.getButtons(coreUI);
+        ButtonAPI intelButton = acc_TripadButtonPanel.getButton(buttons, CoreUITabId.INTEL);
+        if (intelButton == null) return false;
+
+        Object listener = acc_Button.getListener(intelButton);
+        if (!Proxy.isProxyClass(listener.getClass())) return false;
+
+        InvocationHandler handler = Proxy.getInvocationHandler(listener);
+        if (handler instanceof IntelButtonHandler) {
+            acc_Button.setListener(intelButton, ((IntelButtonHandler) handler).originalListener);
+            logger.info("CoreUI uninjected");
+            return true;
+        }
+        return false;
+    }
+
+    private static class IntelButtonHandler implements InvocationHandler {
+        final CoreUIAPI coreUI;
+        final Object originalListener;
+
+        IntelButtonHandler(@NotNull CoreUIAPI coreUI, @NotNull Object originalListener) {
+            this.coreUI = coreUI;
+            this.originalListener = originalListener;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            // ActionListener interface only has one method: actionPerformed().
+            // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
+            // which then updates the currentTab. And that's our target here.
+            Object result = method.invoke(originalListener, args);
+            UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
+            if (currentTab != null) {
+                injectIntelPanel(currentTab);
+            }
+            return result;
+        }
     }
 
     private static IntelPanelAccess acc_IntelPanel;

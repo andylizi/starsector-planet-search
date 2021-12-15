@@ -1,6 +1,6 @@
 package net.andylizi.starsector.planetsearch;
 
-import com.fs.starfarer.api.EveryFrameScript;
+import com.fs.starfarer.api.EveryFrameScriptWithCleanup;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.CoreUIAPI;
@@ -9,7 +9,7 @@ import net.andylizi.starsector.planetsearch.access.CampaignStateAccess;
 import net.andylizi.starsector.planetsearch.access.InteractionDialogAccess;
 import org.apache.log4j.Logger;
 
-public class CoreUIWatchScript implements EveryFrameScript {
+public class CoreUIWatchScript implements EveryFrameScriptWithCleanup {
     private static final Logger logger = Logger.getLogger(CoreUIWatchScript.class);
 
     private static InteractionDialogAccess acc_InteractionDialog;
@@ -60,6 +60,13 @@ public class CoreUIWatchScript implements EveryFrameScript {
         } catch (Throwable t) {
             this.done = true;
             logger.error("Injection failed", t);
+        }
+    }
+
+    @Override
+    public void cleanup() {
+        if (current != null) {
+            CoreUIInjector.uninject(current);
         }
     }
 }
