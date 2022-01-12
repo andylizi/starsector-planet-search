@@ -27,6 +27,7 @@ public final class PlanetsPanelInjector {
     private static TextBoxAccess acc_TextBox;
     private static LabelAccess acc_Label;
     private static PositionAccess acc_Position;
+    private static BaseUIComponentAccess acc_BaseUIComponent;
 
     private static Class<?> expandablePlanetFilter;
     private static MethodHandle expandablePlanetFilterCtor;
@@ -38,6 +39,7 @@ public final class PlanetsPanelInjector {
         if (acc_UIPanel == null) acc_UIPanel = new UIPanelAccess(planetsPanel.getClass());
         if (acc_TextBox == null) acc_TextBox = new TextBoxAccess();
         if (acc_Label == null) acc_Label = new LabelAccess(acc_TextBox.labelType());
+        if (acc_BaseUIComponent == null) acc_BaseUIComponent = new BaseUIComponentAccess(planetsPanel.getClass());
 
         if (expandablePlanetFilter == null) {
             try {
@@ -128,6 +130,9 @@ public final class PlanetsPanelInjector {
         acc_SortablePlanetList.setPlanetFilter(planetList, filter);
         acc_UIPanel.remove(planetsPanel, oldFilter);
         planetsPanel.addComponent(filter);
+
+        float opacity = acc_BaseUIComponent.getOpacity(oldFilter);
+        acc_BaseUIComponent.setOpacity(filter, opacity);
     }
 
     private static void updateSearchBox(UIPanelAPI planetList, UIComponentAPI textBox, LabelAPI placeholder) {
