@@ -9,7 +9,9 @@
     <fileSet>
       <directory>${project.basedir}</directory>
       <includes>
+        <include>data/**/*</include>
         <include>mod_info.json</include>
+        <include>planetsearch.version</include>
       </includes>
       <outputDirectory>/${project.name}/</outputDirectory>
       <filtered>true</filtered>

@@ -3,6 +3,7 @@
 
   <groupId>net.andylizi.starsector</groupId>
   <artifactId>planet-search</artifactId>
+  <!-- Also need to change planetsearch.version -->
   <version>1.0.1</version>
   <packaging>jar</packaging>
 

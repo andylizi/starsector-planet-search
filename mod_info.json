@@ -1,6 +1,6 @@
 {
     "id": "planet_search",
-    "name": "PlanetSearch",
+    "name": "Planet Search",
     "author": "andylizi",
     "utility": "true",
     "version": "${project.version}",

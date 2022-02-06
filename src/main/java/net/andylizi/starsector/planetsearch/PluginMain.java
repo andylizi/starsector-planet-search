@@ -17,6 +17,7 @@ public final class PluginMain extends BaseModPlugin {
         MethodHandle ctor;
         try {
             // Bypass reflection restriction
+            // https://fractalsoftworks.com/forum/index.php?topic=23229.msg354196#msg354196
             ClassLoader cl = PluginMain.class.getClassLoader();
             while (cl != null && !(cl instanceof URLClassLoader)) cl = cl.getParent();
             if (cl == null) throw new RuntimeException("Unable to find URLClassLoader");

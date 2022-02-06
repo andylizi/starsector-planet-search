@@ -1,0 +1,10 @@
+{
+  "masterVersionFile": "https://github.com/andylizi/starsector-planet-search/raw/master/planetsearch.version",
+  "modName": "Planet Search",
+  "modThreadId": 23229,
+  "modVersion": {
+    "major": 1,
+    "minor": 0,
+    "patch": 1
+  }
+}
