@@ -77,9 +77,10 @@ public final class CoreUIInjector {
             // ActionListener interface only has one method: actionPerformed().
             // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
             // which then updates the currentTab. And that's our target here.
+            UIPanelAPI oldTab = acc_CoreUI.getCurrentTab(coreUI);
             Object result = method.invoke(originalListener, args);
             UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
-            if (currentTab != null) {
+            if (currentTab != null && (oldTab == null || oldTab.getClass() != currentTab.getClass())) {
                 injectIntelPanel(currentTab);
             }
             return result;
@@ -90,6 +91,11 @@ public final class CoreUIInjector {
 
     private static void injectIntelPanel(UIPanelAPI intelPanel) throws ReflectiveOperationException {
         if (acc_IntelPanel == null) acc_IntelPanel = new IntelPanelAccess(intelPanel.getClass());
+        if (acc_IntelPanel.intelPanelType() != intelPanel.getClass()) {
+            // When the player is dragging the sector map around and presses E without releasing the mouse,
+            // the Intel button won't do anything, and the current tab won't be Intel in that case.
+            return;
+        }
         UIPanelAPI planetsPanel = acc_IntelPanel.getPlanetsPanel(intelPanel);
         PlanetsPanelInjector.inject(planetsPanel);
     }
