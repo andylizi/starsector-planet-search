@@ -16,6 +16,16 @@ public class PlanetsPanel implements UIPanelAPI {
     }
 
     @Override
+    public void removeComponent(UIComponentAPI component) {
+        throw new UnsupportedOperationException("unimplemented");
+    }
+
+    @Override
+    public void bringComponentToTop(UIComponentAPI c) {
+        throw new UnsupportedOperationException("unimplemented");
+    }
+
+    @Override
     public PositionAPI getPosition() {
         throw new UnsupportedOperationException("unimplemented");
     }
