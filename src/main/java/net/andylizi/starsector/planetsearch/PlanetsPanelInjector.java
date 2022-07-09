@@ -1,5 +1,6 @@
 package net.andylizi.starsector.planetsearch;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.ui.*;
 import com.fs.starfarer.api.util.Misc;
@@ -82,7 +83,10 @@ public final class PlanetsPanelInjector {
         acc_TextBox.setTextListener(textBox, listener);
         acc_TextBox.setUndoOnEscape(textBox, false);
 
-        final LabelAPI placeholder = acc_Label.create("Search...", Misc.getTextColor());
+        String placeholderText = Global.getSettings().getString("planetSearch", "searchboxPlaceholder");
+        if (placeholderText == null) placeholderText = "Search...";
+
+        final LabelAPI placeholder = acc_Label.create(placeholderText, Misc.getTextColor());
         acc_Label.setOpacity(placeholder, PLACEHOLDER_OPACITY);
         ((UIPanelAPI) textBox).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
 
