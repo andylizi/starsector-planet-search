@@ -3,7 +3,6 @@ package net.andylizi.starsector.planetsearch;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.ui.*;
-import com.fs.starfarer.api.util.Misc;
 import net.andylizi.starsector.planetsearch.access.*;
 import org.apache.log4j.Logger;
 
@@ -25,8 +24,7 @@ public final class PlanetsPanelInjector {
     private static PlanetsPanelAccess acc_PlanetsPanel;
     private static SortablePlanetListAccess acc_SortablePlanetList;
     private static UIPanelAccess acc_UIPanel;
-    private static TextBoxAccess acc_TextBox;
-    private static LabelAccess acc_Label;
+    private static TextFieldAccess acc_TextField;
     private static PositionAccess acc_Position;
     private static BaseUIComponentAccess acc_BaseUIComponent;
 
@@ -38,8 +36,6 @@ public final class PlanetsPanelInjector {
         if (acc_SortablePlanetList == null) acc_SortablePlanetList = new SortablePlanetListAccess(
                 acc_PlanetsPanel.sortablePlanetListType(), acc_PlanetsPanel.planetFilterType());
         if (acc_UIPanel == null) acc_UIPanel = new UIPanelAccess(planetsPanel.getClass());
-        if (acc_TextBox == null) acc_TextBox = new TextBoxAccess();
-        if (acc_Label == null) acc_Label = new LabelAccess(acc_TextBox.labelType());
         if (acc_BaseUIComponent == null) acc_BaseUIComponent = new BaseUIComponentAccess(planetsPanel.getClass());
 
         if (expandablePlanetFilter == null) {
@@ -61,36 +57,36 @@ public final class PlanetsPanelInjector {
         if (oldFilter == null || oldFilter.getClass() == expandablePlanetFilter) return;
 
         class SearchBoxHandler implements InvocationHandler {
-            UIComponentAPI textBox;
+            TextFieldAPI textField;
             LabelAPI placeholder;
 
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 String methodName = method.getName();
-                if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName) ||
-                    "actionPerformed".equals(methodName)) {
-                    updateSearchBox(planetList, textBox, placeholder);
+                if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName)) {
+                    updateSearchBox(planetList, textField, placeholder);
                 }
                 return method.getDeclaringClass() == Object.class ? method.invoke(this, args) : null;
             }
         }
 
+        final TextFieldAPI textField = Global.getSettings().createTextField("", Fonts.DEFAULT_SMALL);
+        textField.setUndoOnEscape(false);
+
+        if (acc_TextField == null) acc_TextField = new TextFieldAccess(textField.getClass());
         SearchBoxHandler handler = new SearchBoxHandler();
         Object listener = Proxy.newProxyInstance(SearchBoxHandler.class.getClassLoader(),
-                new Class<?>[] { acc_TextBox.actionListenerType(), acc_TextBox.textListenerType() }, handler);
-
-        final UIComponentAPI textBox = acc_TextBox.newInstance("", Fonts.DEFAULT_SMALL, listener);
-        acc_TextBox.setTextListener(textBox, listener);
-        acc_TextBox.setUndoOnEscape(textBox, false);
+                new Class<?>[] { acc_TextField.textListenerType() }, handler);
+        acc_TextField.setTextListener(textField, listener);
 
         String placeholderText = Global.getSettings().getString("planetSearch", "searchboxPlaceholder");
         if (placeholderText == null) placeholderText = "Search...";
 
-        final LabelAPI placeholder = acc_Label.create(placeholderText, Misc.getTextColor());
-        acc_Label.setOpacity(placeholder, PLACEHOLDER_OPACITY);
-        ((UIPanelAPI) textBox).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
+        final LabelAPI placeholder = Global.getSettings().createLabel(placeholderText, Fonts.DEFAULT_SMALL);
+        placeholder.setOpacity(PLACEHOLDER_OPACITY);
+        ((UIPanelAPI) textField).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
 
-        handler.textBox = textBox;
+        handler.textField = textField;
         handler.placeholder = placeholder;
 
         class SearchBoxFilterPlugin implements PlanetFilterPlugin {
@@ -98,17 +94,17 @@ public final class PlanetsPanelInjector {
             public void afterSizeFirstChanged(UIPanelAPI panel, float width, float height) {
                 List<UIComponentAPI> children = acc_UIPanel.getChildrenNonCopy(panel);
                 UIComponentAPI last = children.get(children.size() - 1);
-                panel.addComponent(textBox).setSize(width, 25f).belowLeft(last, 20f);
+                panel.addComponent((UIComponentAPI) textField).setSize(width, 25f).belowLeft(last, 20f);
             }
 
             @Override
             public List<SectorEntityToken> getFilteredList(UIPanelAPI panel, List<SectorEntityToken> list) {
-                String search = acc_TextBox.getText(textBox).trim().toLowerCase(Locale.ROOT);
+                String search = textField.getText().trim().toLowerCase();
                 if (search.isEmpty()) return list;
 
                 List<SectorEntityToken> filtered = new ArrayList<>(list.size());
                 for (SectorEntityToken entity : list) {
-                    if (entity.getName().toLowerCase(Locale.ROOT).contains(search)) {
+                    if (entity.getName().toLowerCase().contains(search)) {
                         filtered.add(entity);
                     }
                 }
@@ -139,8 +135,8 @@ public final class PlanetsPanelInjector {
         acc_BaseUIComponent.setOpacity(filter, opacity);
     }
 
-    private static void updateSearchBox(UIPanelAPI planetList, UIComponentAPI textBox, LabelAPI placeholder) {
-        acc_Label.setOpacity(placeholder, acc_TextBox.getText(textBox).trim().isEmpty() ? PLACEHOLDER_OPACITY : 0f);
+    private static void updateSearchBox(UIPanelAPI planetList, TextFieldAPI textBox, LabelAPI placeholder) {
+        placeholder.setOpacity(textBox.getText().trim().isEmpty() ? PLACEHOLDER_OPACITY : 0f);
         acc_SortablePlanetList.recreateList(planetList, null);
     }
 
