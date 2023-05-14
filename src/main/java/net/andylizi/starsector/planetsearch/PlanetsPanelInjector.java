@@ -100,7 +100,7 @@ public final class PlanetsPanelInjector {
             public void afterSizeFirstChanged(UIPanelAPI panel, float width, float height) {
                 List<UIComponentAPI> children = acc_UIPanel.getChildrenNonCopy(panel);
                 UIComponentAPI last = children.get(children.size() - 1);
-                panel.addComponent((UIComponentAPI) textField).setSize(width, 25f).belowLeft(last, 20f);
+                panel.addComponent(textField).setSize(width, 25f).belowLeft(last, 20f);
             }
 
             @Override

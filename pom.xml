@@ -19,7 +19,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
-    <starsector.version>0.95.1a-RC6</starsector.version>
+    <starsector.version>0.96a-RC9</starsector.version>
   </properties>
 
   <dependencies>
@@ -29,7 +29,7 @@
         -Dsources=starfarer.api.zip \
         -DgroupId=com.fs.starfarer \
         -DartifactId=starfarer-api \
-        -Dversion=0.95.1a-RC6 \
+        -Dversion=0.96a-RC9 \
         -Dpackaging=jar \
         -DgeneratePom=true
     -->
@@ -44,7 +44,7 @@
         -Dfile=fs.common_obf.jar \
         -DgroupId=com.fs.starfarer \
         -DartifactId=common \
-        -Dversion=0.95.1a-RC6 \
+        -Dversion=0.96a-RC9 \
         -Dpackaging=jar \
         -DgeneratePom=true
     -->
@@ -85,11 +85,11 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.11.0</version>
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.2.0</version>
+        <version>3.3.0</version>
         <configuration>
           <excludes>
             <exclude>com/fs/**</exclude>
@@ -98,11 +98,11 @@
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.2.0</version>
+        <version>3.3.1</version>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.5.0</version>
         <configuration>
           <descriptors>
             <descriptor>src/assembly/mod.xml</descriptor>
@@ -121,7 +121,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M5</version>
+        <version>3.1.0</version>
       </plugin>
     </plugins>
   </build>
