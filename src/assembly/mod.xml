@@ -12,6 +12,7 @@
         <include>data/**/*</include>
         <include>mod_info.json</include>
         <include>planetsearch.version</include>
+        <include>LICENSE</include>
       </includes>
       <outputDirectory>/${project.name}/</outputDirectory>
       <filtered>true</filtered>

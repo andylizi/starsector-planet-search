@@ -10,8 +10,8 @@
   <name>PlanetSearch</name>
   <licenses>
     <license>
-      <name>GPL-3.0-or-later</name>
-      <url>https://www.gnu.org/licenses/gpl-3.0.txt</url>
+      <name>MPL-2.0</name>
+      <url>https://mozilla.org/MPL/2.0/</url>
     </license>
   </licenses>
 
