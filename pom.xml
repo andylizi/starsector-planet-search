@@ -19,7 +19,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
-    <starsector.version>0.96a-RC9</starsector.version>
+    <starsector.version>0.97a-RC11</starsector.version>
   </properties>
 
   <dependencies>
@@ -29,7 +29,7 @@
         -Dsources=starfarer.api.zip \
         -DgroupId=com.fs.starfarer \
         -DartifactId=starfarer-api \
-        -Dversion=0.96a-RC9 \
+        -Dversion=0.97a-RC11 \
         -Dpackaging=jar \
         -DgeneratePom=true
     -->
@@ -44,7 +44,7 @@
         -Dfile=fs.common_obf.jar \
         -DgroupId=com.fs.starfarer \
         -DartifactId=common \
-        -Dversion=0.96a-RC9 \
+        -Dversion=0.97a-RC11 \
         -Dpackaging=jar \
         -DgeneratePom=true
     -->
