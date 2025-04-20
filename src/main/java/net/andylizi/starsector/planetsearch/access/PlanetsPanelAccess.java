@@ -7,7 +7,6 @@
 package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
@@ -28,9 +27,9 @@ public class PlanetsPanelAccess {
         this.planetsPanelType = planetsPanelType;
 
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-        Method m_getPlanetList2 = planetsPanelType.getMethod("getPlanetList2");
-        ReflectionUtil.trySetAccessible(m_getPlanetList2);
-        this.m_getPlanetList2 = lookup.unreflect(m_getPlanetList2);
+        Method method = planetsPanelType.getMethod("getPlanetList2");
+        method.trySetAccessible();
+        this.m_getPlanetList2 = lookup.unreflect(method);
         this.m_createUI = lookup.findVirtual(planetsPanelType, "createUI", methodType(void.class));
 
         Field planetFilterPanelField = null;

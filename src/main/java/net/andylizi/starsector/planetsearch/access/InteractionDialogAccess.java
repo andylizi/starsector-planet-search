@@ -8,7 +8,6 @@ package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.campaign.CoreUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
@@ -24,7 +23,7 @@ public class InteractionDialogAccess {
         this.interactionDialogType = interactionDialogType;
 
         Method method = interactionDialogType.getMethod("getCoreUI");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_getCoreUI = MethodHandles.publicLookup().unreflect(method);
     }
 

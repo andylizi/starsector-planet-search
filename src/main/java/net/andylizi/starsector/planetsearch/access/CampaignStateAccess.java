@@ -8,7 +8,6 @@ package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.CoreUIAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
@@ -24,7 +23,7 @@ public class CampaignStateAccess {
         this.campaignStateType = (Class<? extends CampaignUIAPI>) Class.forName("com.fs.starfarer.campaign.CampaignState");
 
         Method method = campaignStateType.getMethod("getCore");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_getCore = MethodHandles.publicLookup().unreflect(method);
     }
 

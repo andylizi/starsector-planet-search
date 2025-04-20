@@ -8,7 +8,6 @@ package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.ui.ScrollPanelAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -21,7 +20,7 @@ public final class ScrollPanelAccess {
     @SuppressWarnings("unchecked")
     public ScrollPanelAccess(Class<? extends ScrollPanelAPI> subclass) throws ReflectiveOperationException {
         Method method = subclass.getMethod("getContentContainer");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.scrollPanelType = (Class<? extends ScrollPanelAPI>) method.getDeclaringClass();
         this.m_getContentContainer = MethodHandles.publicLookup().unreflect(method);
     }

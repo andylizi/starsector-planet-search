@@ -63,8 +63,8 @@
     </dependency>
     <dependency>
       <groupId>org.jetbrains</groupId>
-      <artifactId>annotations-java5</artifactId>
-      <version>23.0.0</version>
+      <artifactId>annotations</artifactId>
+      <version>26.0.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

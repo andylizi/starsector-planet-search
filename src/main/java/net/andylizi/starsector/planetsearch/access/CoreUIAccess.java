@@ -8,7 +8,6 @@ package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.campaign.CoreUIAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
@@ -24,11 +23,11 @@ public class CoreUIAccess {
         this.coreUIType = coreUIType;
 
         Method method = coreUIType.getMethod("getButtons");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_getButtons = MethodHandles.publicLookup().unreflect(method);
 
         method = coreUIType.getMethod("getCurrentTab");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_getCurrentTab = MethodHandles.publicLookup().unreflect(method);
     }
 

@@ -8,7 +8,6 @@ package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -22,7 +21,7 @@ public class TripadButtonPanelAccess {
         this.tripadButtonPanelType = tripadButtonPanelType;
 
         Method method = tripadButtonPanelType.getMethod("getButton", Object.class);
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_getButton = MethodHandles.publicLookup().unreflect(method);
     }
 

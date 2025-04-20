@@ -61,8 +61,8 @@ public final class CoreUIInjector {
         if (!Proxy.isProxyClass(listener.getClass())) return false;
 
         InvocationHandler handler = Proxy.getInvocationHandler(listener);
-        if (handler instanceof IntelButtonHandler) {
-            acc_Button.setListener(intelButton, ((IntelButtonHandler) handler).originalListener);
+        if (handler instanceof IntelButtonHandler h) {
+            acc_Button.setListener(intelButton, h.originalListener);
             logger.info("CoreUI uninjected");
             return true;
         }

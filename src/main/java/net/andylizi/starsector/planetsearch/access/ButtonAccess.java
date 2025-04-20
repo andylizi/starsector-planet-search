@@ -7,7 +7,6 @@
 package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.ui.ButtonAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
@@ -25,7 +24,7 @@ public class ButtonAccess {
 
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
         Method method = buttonType.getMethod("getListener");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.actionListenerType = method.getReturnType();
         this.m_getListener = lookup.unreflect(method);
 
@@ -33,7 +32,7 @@ public class ButtonAccess {
             throw new ClassNotFoundException(buttonType + ".getListener() return type is not an interface");
 
         method = buttonType.getMethod("setListener", actionListenerType);
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_setListener = lookup.unreflect(method);
     }
 

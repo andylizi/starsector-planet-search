@@ -8,7 +8,6 @@ package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -23,7 +22,7 @@ public class UIPanelAccess {
     @SuppressWarnings("unchecked")
     public UIPanelAccess(Class<? extends UIPanelAPI> subclass) throws ReflectiveOperationException {
         Method method = subclass.getMethod("getChildrenNonCopy");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.uiPanelType = (Class<? extends UIPanelAPI>) method.getDeclaringClass();
         this.m_getChildrenNonCopy = MethodHandles.publicLookup().unreflect(method);
 
@@ -31,9 +30,9 @@ public class UIPanelAccess {
         for (Method m : uiPanelType.getMethods()) {
             Class<?>[] paramTypes;
             if ("remove".equals(m.getName()) && !m.isVarArgs() &&
-                (paramTypes = m.getParameterTypes()).length == 1 &&
-                !paramTypes[0].isArray()) {
-                ReflectionUtil.trySetAccessible(m);
+                    (paramTypes = m.getParameterTypes()).length == 1 &&
+                    !paramTypes[0].isArray()) {
+                method.trySetAccessible();
                 m_remove = MethodHandles.publicLookup().unreflect(m);
                 break;
             }

@@ -7,7 +7,6 @@
 package net.andylizi.starsector.planetsearch.access;
 
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import net.andylizi.starsector.planetsearch.ReflectionUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -21,7 +20,7 @@ public class IntelPanelAccess {
         this.intelPanelType = intelPanelType;
 
         Method method = intelPanelType.getMethod("getPlanetsPanel");
-        ReflectionUtil.trySetAccessible(method);
+        method.trySetAccessible();
         this.m_getPlanetsPanel = MethodHandles.publicLookup().unreflect(method);
     }
 
