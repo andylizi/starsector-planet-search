@@ -8,69 +8,100 @@ package net.andylizi.starsector.planetsearch;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
+import com.fs.starfarer.api.impl.PlanetSearchData;
 import com.fs.starfarer.api.ui.*;
 import net.andylizi.starsector.planetsearch.access.*;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.lang.instrument.IllegalClassFormatException;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.security.ProtectionDomain;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 public final class PlanetsPanelInjector {
-    private static final float PLACEHOLDER_OPACITY = 0.45f;
-    private static final Logger logger = Logger.getLogger(CoreUIWatchScript.class);
+    private static final Logger logger = Logger.getLogger(PlanetsPanelInjector.class);
 
     private static PlanetsPanelAccess acc_PlanetsPanel;
-    private static SortablePlanetListAccess acc_SortablePlanetList;
+    private static PlanetFilterPanelAccess acc_PlanetFilterPanel;
     private static UIPanelAccess acc_UIPanel;
     private static TextFieldAccess acc_TextField;
     private static PositionAccess acc_Position;
-    private static BaseUIComponentAccess acc_BaseUIComponent;
 
-    private static Class<?> expandablePlanetFilter;
-    private static MethodHandle expandablePlanetFilterCtor;
+    private static MethodHandle newSearchableFilterPanel;
 
     public static void inject(UIPanelAPI planetsPanel) throws ReflectiveOperationException {
         if (acc_PlanetsPanel == null) acc_PlanetsPanel = new PlanetsPanelAccess(planetsPanel.getClass());
-        if (acc_SortablePlanetList == null) acc_SortablePlanetList = new SortablePlanetListAccess(
-                acc_PlanetsPanel.sortablePlanetListType(), acc_PlanetsPanel.planetFilterType());
+        if (acc_PlanetFilterPanel == null) acc_PlanetFilterPanel = new PlanetFilterPanelAccess(
+                acc_PlanetsPanel.planetsFilterPanelType());
         if (acc_UIPanel == null) acc_UIPanel = new UIPanelAccess(planetsPanel.getClass());
-        if (acc_BaseUIComponent == null) acc_BaseUIComponent = new BaseUIComponentAccess(planetsPanel.getClass());
+        if (acc_Position == null) acc_Position = new PositionAccess(planetsPanel.getPosition().getClass());
 
-        if (expandablePlanetFilter == null) {
-            try {
-                String className = PlanetsPanelInjector.class.getPackage().getName().concat(".ExpandablePlanetFilter");
-                expandablePlanetFilter = loadCustomFilterClass(className,
-                        acc_PlanetsPanel.planetFilterType(), acc_PlanetsPanel.planetsPanelType());
-            } catch (IOException | IllegalClassFormatException | NullPointerException e) {
-                logger.error("Failed to transform SearchablePlanetFilter", e);
-                return;
-            }
+        acc_PlanetsPanel.createUI(planetsPanel);
+        UIPanelAPI planetList = acc_PlanetsPanel.getPlanetList(planetsPanel);
+        UIPanelAPI oldFilterPanel = acc_PlanetsPanel.getPlanetFilterPanelPanel(planetsPanel);
+        if (planetList == null || oldFilterPanel == null)
+            throw new NullPointerException("fields was not initialized by createUI()");
 
-            expandablePlanetFilterCtor = MethodHandles.lookup().findConstructor(expandablePlanetFilter,
-                    MethodType.methodType(void.class, acc_PlanetsPanel.planetsPanelType(), List.class));
+        if (newSearchableFilterPanel == null) newSearchableFilterPanel =
+                SearchablePlanetFilterPanelFactory.create(acc_PlanetsPanel.planetsFilterPanelType(),
+                        acc_PlanetsPanel.planetsListType(), acc_Position.positionType());
+
+        UIPanelAPI newFilterPanel;
+        try {
+            var oldPanelPos = oldFilterPanel.getPosition();
+            newFilterPanel = (UIPanelAPI) newSearchableFilterPanel.invoke(
+                    oldPanelPos.getWidth(), oldPanelPos.getHeight(), planetList);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new AssertionError("unreachable", t);
         }
 
-        final UIPanelAPI planetList = acc_PlanetsPanel.getPlanetList(planetsPanel);
-        UIPanelAPI oldFilter = acc_PlanetsPanel.getPlanetFilter(planetsPanel);
-        if (oldFilter == null || oldFilter.getClass() == expandablePlanetFilter) return;
+        acc_Position.set(newFilterPanel.getPosition(), oldFilterPanel.getPosition());
+        acc_PlanetsPanel.setPlanetFilterPanel(planetsPanel, newFilterPanel);
+        acc_UIPanel.remove(planetsPanel, oldFilterPanel);
+        planetsPanel.addComponent(newFilterPanel);
+    }
+
+    private static final String SEARCH_FILTER_PARAM_KEY = "search_term";
+
+    static final PlanetSearchData.PlanetFilter SEARCH_FILTER = new PlanetSearchData.PlanetFilter() {
+        @Override
+        public boolean accept(SectorEntityToken entity, Map<String, String> params) {
+            var search = params.get(SEARCH_FILTER_PARAM_KEY);
+            return search == null || entity.getName().toLowerCase().contains(search);
+        }
+
+        @Override
+        public boolean shouldShow() {
+            return true;
+        }
+
+        @Override
+        public void createTooltip(TooltipMakerAPI info, float width, String param) {
+        }
+    };
+
+    static TextFieldAPI __injectFilterPanel(UIPanelAPI self) throws ReflectiveOperationException {
+        var labels = new TreeMap<LabelAPI, UIPanelAPI>((a, b) ->
+                Float.compare(a.getPosition().getY(), b.getPosition().getY()));
+        collectTopLevelLabels(self, labels);
+
+        var label = labels.firstKey();
+        var parent = labels.firstEntry().getValue();
 
         class SearchBoxHandler implements InvocationHandler {
             TextFieldAPI textField;
-            LabelAPI placeholder;
 
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 String methodName = method.getName();
-                if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName)) {
-                    updateSearchBox(planetList, textField, placeholder);
+                if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName) ||
+                        "textChanged".equals(methodName)) {
+                    acc_PlanetFilterPanel.updatePlanetList(self);
                 }
                 return method.getDeclaringClass() == Object.class ? method.invoke(this, args) : null;
             }
@@ -80,104 +111,50 @@ public final class PlanetsPanelInjector {
         textField.setUndoOnEscape(false);
 
         if (acc_TextField == null) acc_TextField = new TextFieldAccess(textField.getClass());
-        SearchBoxHandler handler = new SearchBoxHandler();
+        var handler = new SearchBoxHandler();
         Object listener = Proxy.newProxyInstance(SearchBoxHandler.class.getClassLoader(),
                 new Class<?>[] { acc_TextField.textListenerType() }, handler);
         acc_TextField.setTextListener(textField, listener);
 
-        String placeholderText = Global.getSettings().getString("planetSearch", "searchboxPlaceholder");
-        if (placeholderText == null) placeholderText = "Search...";
-
-        final LabelAPI placeholder = Global.getSettings().createLabel(placeholderText, Fonts.DEFAULT_SMALL);
-        placeholder.setOpacity(PLACEHOLDER_OPACITY);
-        ((UIPanelAPI) textField).addComponent((UIComponentAPI) placeholder).inLMid(2f * 2f - 1f); // Just above the cursor
+        var hintText = Objects.requireNonNullElse(Global.getSettings().getString("planetSearch",
+                "searchHint"), "Search...");
+        acc_TextField.setHint(textField, hintText);
 
         handler.textField = textField;
-        handler.placeholder = placeholder;
 
-        class SearchBoxFilterPlugin implements PlanetFilterPlugin {
-            @Override
-            public void afterSizeFirstChanged(UIPanelAPI panel, float width, float height) {
-                List<UIComponentAPI> children = acc_UIPanel.getChildrenNonCopy(panel);
-                UIComponentAPI last = children.get(children.size() - 1);
-                panel.addComponent(textField).setSize(width, 25f).belowLeft(last, 20f);
-            }
-
-            @Override
-            public List<SectorEntityToken> getFilteredList(UIPanelAPI panel, List<SectorEntityToken> list) {
-                String search = textField.getText().trim().toLowerCase();
-                if (search.isEmpty()) return list;
-
-                List<SectorEntityToken> filtered = new ArrayList<>(list.size());
-                for (SectorEntityToken entity : list) {
-                    if (entity.getName().toLowerCase().contains(search)) {
-                        filtered.add(entity);
-                    }
-                }
-                return filtered;
-            }
-        }
-
-        UIPanelAPI filter;
-        try {
-            filter = (UIPanelAPI) expandablePlanetFilterCtor.invoke(planetsPanel,
-                    Collections.singletonList(new SearchBoxFilterPlugin()));
-        } catch (RuntimeException | Error ex) {
-            throw ex;
-        } catch (Throwable t) {
-            throw new AssertionError("unreachable", t);
-        }
-
-        PositionAPI oldPosition = oldFilter.getPosition();
-        if (acc_Position == null) acc_Position = new PositionAccess(oldPosition.getClass());
-        acc_Position.set(filter.getPosition(), oldPosition);
-
-        acc_PlanetsPanel.setPlanetFilter(planetsPanel, filter);
-        acc_SortablePlanetList.setPlanetFilter(planetList, filter);
-        acc_UIPanel.remove(planetsPanel, oldFilter);
-        planetsPanel.addComponent(filter);
-
-        float opacity = acc_BaseUIComponent.getOpacity(oldFilter);
-        acc_BaseUIComponent.setOpacity(filter, opacity);
+        var topLabelPos = label.getPosition();
+        acc_Position.set(parent.addComponent(textField), topLabelPos);
+        textField.getPosition().setYAlignOffset(0);
+        topLabelPos.belowLeft(textField, 10);
+        return textField;
     }
 
-    private static void updateSearchBox(UIPanelAPI planetList, TextFieldAPI textBox, LabelAPI placeholder) {
-        placeholder.setOpacity(textBox.getText().trim().isEmpty() ? PLACEHOLDER_OPACITY : 0f);
-        acc_SortablePlanetList.recreateList(planetList, null);
+    private static ScrollPanelAccess acc_ScrollPanel;
+
+    private static void collectTopLevelLabels(UIPanelAPI panel, TreeMap<LabelAPI, UIPanelAPI> labels)
+            throws ReflectiveOperationException {
+        for (var component : acc_UIPanel.getChildrenNonCopy(panel)) {
+            if (component instanceof LabelAPI label) {
+                if (acc_Position.getBase(label.getPosition()) == null)
+                    labels.put(label, panel);
+            } else if (component instanceof ScrollPanelAPI scrollPanel) {
+                if (acc_ScrollPanel == null) acc_ScrollPanel = new ScrollPanelAccess(scrollPanel.getClass());
+                collectTopLevelLabels(acc_ScrollPanel.getContentContainer(scrollPanel), labels);
+            }
+        }
     }
 
-    /**
-     * @see ExpandablePlanetFilter
-     */
-    private static Class<?> loadCustomFilterClass(
-            String className,
-            Class<?> planetFilterType,
-            Class<?> planetsPanelType
-    )
-            throws IOException, IllegalClassFormatException, ReflectiveOperationException {
-        String planetFilterFrom = "com/fs/starfarer/campaign/ui/intel/PlanetFilter",
-                planetsPanelFrom = "com/fs/starfarer/campaign/ui/intel/PlanetsPanel";
-        String planetFilterTo = planetFilterType.getName().replace('.', '/'),
-                planetsPanelTo = planetsPanelType.getName().replace('.', '/');
-
-        ClassLoader cl = PlanetsPanelInjector.class.getClassLoader();
-        byte[] data = ClassConstantTransformer.readClassBuffer(cl, className);
-        data = new ClassConstantTransformer(Arrays.asList(
-                ClassConstantTransformer.newTransform(planetFilterFrom, planetFilterTo),
-                ClassConstantTransformer.newTransform(planetsPanelFrom, planetsPanelTo)
-        )).apply(data);
-
-        // We can't just cast to CustomClassLoader because that class is loaded by another class loader
-        MethodHandle m = MethodHandles.lookup().findVirtual(cl.getClass(), "defineMyClass", MethodType.methodType(
-                Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class));
-        try {
-            return (Class<?>) m.invoke(cl,
-                    className, data, 0, data.length, PlanetsPanelInjector.class.getProtectionDomain());
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new AssertionError("unreachable", t);
+    static void __hook_getParams(Map<String, String> params, TextFieldAPI searchBox) {
+        String term;
+        if (searchBox != null && !(term = searchBox.getText().trim().toLowerCase()).isEmpty()) {
+            params.put(SEARCH_FILTER_PARAM_KEY, term);
         }
+    }
+
+    static void __hook_syncWithParams(TextFieldAPI searchBox, Map<String, String> params) {
+        if (searchBox == null) return;
+        String term;
+        searchBox.setText((params != null && (term = params.get(SEARCH_FILTER_PARAM_KEY)) != null) ? term : "");
     }
 
     private PlanetsPanelInjector() {throw new AssertionError();}

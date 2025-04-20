@@ -6,6 +6,6 @@
     "version": "${project.version}",
     "description": "Add a search box to the planet list.",
     "gameVersion": "${starsector.version}",
-    "jars": ["jars/${project.build.finalName}.jar"],
+    "jars": ["jars/${project.build.finalName}.jar", "jars/asm-${asm.version}.jar"],
     "modPlugin": "net.andylizi.starsector.planetsearch.PluginMain"
 }

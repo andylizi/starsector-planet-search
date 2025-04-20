@@ -11,18 +11,22 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+
+import static java.lang.invoke.MethodType.methodType;
 
 public class TextFieldAccess {
     private final Class<? extends TextFieldAPI> textFieldType;
     private final Class<?> textListenerType;
     private final MethodHandle m_setTextListener;
+    private final MethodHandle m_setHint;
 
     public TextFieldAccess(Class<? extends TextFieldAPI> textFieldType) throws ReflectiveOperationException {
+        MethodHandles.Lookup lookup = MethodHandles.publicLookup();
         this.textFieldType = textFieldType;
         this.textListenerType = textFieldType.getMethod("getTextListener").getReturnType();
-        this.m_setTextListener = MethodHandles.publicLookup().findVirtual(textFieldType, "setTextListener",
-                MethodType.methodType(void.class, textListenerType));
+        this.m_setTextListener = lookup.findVirtual(textFieldType, "setTextListener",
+                methodType(void.class, textListenerType));
+        this.m_setHint = lookup.findVirtual(textFieldType, "setHint", methodType(void.class, String.class));
     }
 
     public Class<? extends TextFieldAPI> textFieldType() {
@@ -33,9 +37,19 @@ public class TextFieldAccess {
         return textListenerType;
     }
 
-    public void setTextListener(TextFieldAPI textBox, @Nullable Object listener) {
+    public void setTextListener(TextFieldAPI self, @Nullable Object listener) {
         try {
-            this.m_setTextListener.invoke(textBox, listener);
+            this.m_setTextListener.invoke(self, listener);
+        } catch (RuntimeException | Error ex) {
+            throw ex;
+        } catch (Throwable t) {
+            throw new AssertionError("unreachable", t);
+        }
+    }
+
+    public void setHint(TextFieldAPI self, String hint) {
+        try {
+            this.m_setHint.invoke(self, hint);
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {

@@ -59,7 +59,6 @@ public class CoreUIWatchScript implements EveryFrameScriptWithCleanup {
             }
 
             if (core != current) {
-                logger.info("CoreUI changed");
                 if (core != null) CoreUIInjector.inject(core);
                 current = core;
             }

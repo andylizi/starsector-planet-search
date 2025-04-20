@@ -30,7 +30,7 @@ public class ButtonAccess {
         this.m_getListener = lookup.unreflect(method);
 
         if (!this.actionListenerType.isInterface())
-            throw new RuntimeException(buttonType + ".getListener() return type is not an interface");
+            throw new ClassNotFoundException(buttonType + ".getListener() return type is not an interface");
 
         method = buttonType.getMethod("setListener", actionListenerType);
         ReflectionUtil.trySetAccessible(method);

@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 public final class CoreUIInjector {
-    private static final Logger logger = Logger.getLogger(CoreUIWatchScript.class);
+    private static final Logger logger = Logger.getLogger(CoreUIInjector.class);
 
     private static CoreUIAccess acc_CoreUI;
     private static TripadButtonPanelAccess acc_TripadButtonPanel;

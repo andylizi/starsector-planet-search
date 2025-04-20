@@ -1,5 +1,5 @@
-<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
   <id>mod</id>
   <baseDirectory>/</baseDirectory>
   <formats>
@@ -25,4 +25,12 @@
       <outputDirectory>/${project.name}/jars</outputDirectory>
     </fileSet>
   </fileSets>
+  <dependencySets>
+    <dependencySet>
+      <includes>
+        <include>org.ow2.asm:asm</include>
+      </includes>
+      <outputDirectory>/${project.name}/jars</outputDirectory>
+    </dependencySet>
+  </dependencySets>
 </assembly>

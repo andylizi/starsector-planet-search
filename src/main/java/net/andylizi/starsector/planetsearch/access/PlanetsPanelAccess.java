@@ -15,25 +15,43 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import static java.lang.invoke.MethodType.methodType;
+
 public class PlanetsPanelAccess {
     private final Class<? extends UIPanelAPI> planetsPanelType;
-    private final MethodHandle m_getPlanetList;
-    private final MethodHandle f_planetFilter_get;
-    private final MethodHandle f_planetFilter_set;
+    private final MethodHandle m_getPlanetList2;
+    private final MethodHandle m_createUI;
+    private final MethodHandle f_planetFilterPanel_get;
+    private final MethodHandle f_planetFilterPanel_set;
 
     public PlanetsPanelAccess(Class<? extends UIPanelAPI> planetsPanelType) throws ReflectiveOperationException {
         this.planetsPanelType = planetsPanelType;
 
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-        Method method = planetsPanelType.getMethod("getPlanetList");
-        ReflectionUtil.trySetAccessible(method);
-        this.m_getPlanetList = lookup.unreflect(method);
+        Method m_getPlanetList2 = planetsPanelType.getMethod("getPlanetList2");
+        ReflectionUtil.trySetAccessible(m_getPlanetList2);
+        this.m_getPlanetList2 = lookup.unreflect(m_getPlanetList2);
+        this.m_createUI = lookup.findVirtual(planetsPanelType, "createUI", methodType(void.class));
 
-        Class<?> planetFilterType = planetsPanelType.getMethod("getPlanetFilter").getReturnType();
-        Field field = ReflectionUtil.getFirstDeclaredFieldByType(planetsPanelType, planetFilterType);
-        field.setAccessible(true);
-        this.f_planetFilter_get = lookup.unreflectGetter(field);
-        this.f_planetFilter_set = lookup.unreflectSetter(field);
+        Field planetFilterPanelField = null;
+        for (Field f : planetsPanelType.getDeclaredFields()) {
+            Class<?> type = f.getType();
+            if (UIPanelAPI.class.isAssignableFrom(type)) {
+                try {
+                    type.getDeclaredMethod("getFilteredPlanets");
+                    planetFilterPanelField = f;
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+        }
+
+        if (planetFilterPanelField == null)
+            throw new NoSuchFieldException(
+                    "failed to locate PlanetFilterPanel field in " + planetsPanelType.getName());
+
+        planetFilterPanelField.setAccessible(true);
+        this.f_planetFilterPanel_get = lookup.unreflectGetter(planetFilterPanelField);
+        this.f_planetFilterPanel_set = lookup.unreflectSetter(planetFilterPanelField);
     }
 
     public Class<? extends UIPanelAPI> planetsPanelType() {
@@ -41,18 +59,18 @@ public class PlanetsPanelAccess {
     }
 
     @SuppressWarnings("unchecked")
-    public Class<? extends UIPanelAPI> planetFilterType() {
-        return (Class<? extends UIPanelAPI>) f_planetFilter_get.type().returnType();
+    public Class<? extends UIPanelAPI> planetsListType() {
+        return (Class<? extends UIPanelAPI>) m_getPlanetList2.type().returnType();
     }
 
     @SuppressWarnings("unchecked")
-    public Class<? extends UIPanelAPI> sortablePlanetListType() {
-        return (Class<? extends UIPanelAPI>) m_getPlanetList.type().returnType();
+    public Class<? extends UIPanelAPI> planetsFilterPanelType() {
+        return (Class<? extends UIPanelAPI>) f_planetFilterPanel_get.type().returnType();
     }
 
     public UIPanelAPI getPlanetList(UIPanelAPI planetsPanel) {
         try {
-            return (UIPanelAPI) this.m_getPlanetList.invoke(planetsPanel);
+            return (UIPanelAPI) this.m_getPlanetList2.invoke(planetsPanel);
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {
@@ -60,9 +78,9 @@ public class PlanetsPanelAccess {
         }
     }
 
-    public UIPanelAPI getPlanetFilter(UIPanelAPI planetsPanel) {
+    public void createUI(UIPanelAPI planetsPanel) {
         try {
-            return (UIPanelAPI) this.f_planetFilter_get.invoke(planetsPanel);
+            this.m_createUI.invoke(planetsPanel);
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {
@@ -70,9 +88,19 @@ public class PlanetsPanelAccess {
         }
     }
 
-    public void setPlanetFilter(UIPanelAPI planetsPanel, @Nullable Object planetFilter) {
+    public UIPanelAPI getPlanetFilterPanelPanel(UIPanelAPI planetsPanel) {
         try {
-            this.f_planetFilter_set.invoke(planetsPanel, planetFilter);
+            return (UIPanelAPI) this.f_planetFilterPanel_get.invoke(planetsPanel);
+        } catch (RuntimeException | Error ex) {
+            throw ex;
+        } catch (Throwable t) {
+            throw new AssertionError("unreachable", t);
+        }
+    }
+
+    public void setPlanetFilterPanel(UIPanelAPI planetsPanel, @Nullable UIPanelAPI planetFilterPanel) {
+        try {
+            this.f_planetFilterPanel_set.invoke(planetsPanel, planetFilterPanel);
         } catch (RuntimeException | Error ex) {
             throw ex;
         } catch (Throwable t) {

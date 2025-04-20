@@ -20,7 +20,7 @@ public final class ReflectionUtil {
         try {
             //noinspection JavaLangInvokeHandleSignature
             trySetAccessible = MethodHandles.lookup()
-                .findVirtual(AccessibleObject.class, "trySetAccessible", MethodType.methodType(boolean.class));
+                    .findVirtual(AccessibleObject.class, "trySetAccessible", MethodType.methodType(boolean.class));
         } catch (NoSuchMethodException ignored) {
             // Below Java 9
         } catch (RuntimeException | Error ex) {
@@ -65,6 +65,20 @@ public final class ReflectionUtil {
                 return (Constructor<T>) ctor;
         }
         throw new NoSuchMethodException("constructor with " + count + " parameters in " + type);
+    }
+
+    public static Method getMethodByName(Class<?> owner, String name) throws NoSuchMethodException {
+        Method result = null;
+        for (Method m : owner.getMethods()) {
+            if (name.equals(m.getName()))
+                if (result != null) {
+                    throw new NoSuchMethodException("more than one method named " + name + " in " + owner.getName());
+                } else {
+                    result = m;
+                }
+        }
+        if (result == null) throw new NoSuchMethodException("method named " + name + " in " + owner.getName());
+        return result;
     }
 
     private ReflectionUtil() {
