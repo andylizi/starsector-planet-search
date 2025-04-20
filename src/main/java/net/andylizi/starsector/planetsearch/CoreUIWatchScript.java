@@ -62,16 +62,25 @@ public class CoreUIWatchScript implements EveryFrameScriptWithCleanup {
                 if (core != null) CoreUIInjector.inject(core);
                 current = core;
             }
+        } catch (PlanetSearchException e) {
+            this.done = true;
+            throw e;
         } catch (Throwable t) {
             this.done = true;
-            logger.error("Injection failed", t);
+            throw new PlanetSearchException("injecting CoreUI", t);
         }
     }
 
     @Override
     public void cleanup() {
         if (current != null) {
-            CoreUIInjector.uninject(current);
+            try {
+                CoreUIInjector.uninject(current);
+            } catch (PlanetSearchException e) {
+                throw e;
+            } catch (Throwable t) {
+                logger.error("Uninjection failed", t);
+            }
         }
     }
 }

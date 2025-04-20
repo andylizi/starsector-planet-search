@@ -79,17 +79,23 @@ public final class CoreUIInjector {
         }
 
         @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            // ActionListener interface only has one method: actionPerformed().
-            // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
-            // which then updates the currentTab. And that's our target here.
-            UIPanelAPI oldTab = acc_CoreUI.getCurrentTab(coreUI);
-            Object result = method.invoke(originalListener, args);
-            UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
-            if (currentTab != null && (oldTab == null || oldTab.getClass() != currentTab.getClass())) {
-                injectIntelPanel(currentTab);
+        public Object invoke(Object proxy, Method method, Object[] args) throws PlanetSearchException {
+            try {
+                // ActionListener interface only has one method: actionPerformed().
+                // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
+                // which then updates the currentTab. And that's our target here.
+                UIPanelAPI oldTab = acc_CoreUI.getCurrentTab(coreUI);
+                Object result = method.invoke(originalListener, args);
+                UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
+                if (currentTab != null && (oldTab == null || oldTab.getClass() != currentTab.getClass())) {
+                    injectIntelPanel(currentTab);
+                }
+                return result;
+            } catch (PlanetSearchException e) {
+                throw e;
+            } catch (Throwable t) {
+                throw new PlanetSearchException("injecting intel panel", t);
             }
-            return result;
         }
     }
 
@@ -103,7 +109,13 @@ public final class CoreUIInjector {
             return;
         }
         UIPanelAPI planetsPanel = acc_IntelPanel.getPlanetsPanel(intelPanel);
-        PlanetsPanelInjector.inject(planetsPanel);
+        try {
+            PlanetsPanelInjector.inject(planetsPanel);
+        } catch (PlanetSearchException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new PlanetSearchException("injecting planets panel", t);
+        }
     }
 
     private CoreUIInjector() {throw new AssertionError();}

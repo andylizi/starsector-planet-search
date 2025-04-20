@@ -34,10 +34,10 @@ public final class PluginMain extends BaseModPlugin {
                     .loadClass(PluginMain.class.getPackage().getName() + ".CoreUIWatchScript");
 
             ctor = MethodHandles.lookup().findConstructor(cls, MethodType.methodType(void.class));
-        } catch (RuntimeException | Error ex) {
-            throw ex;
+        } catch (PlanetSearchException e) {
+            throw e;
         } catch (Throwable t) {
-            throw new ExceptionInInitializerError(t);
+            throw new PlanetSearchException("init", t);
         }
         scriptCtor = ctor;
     }

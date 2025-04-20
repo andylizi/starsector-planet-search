@@ -54,7 +54,7 @@ public final class PlanetsPanelInjector {
             var oldPanelPos = oldFilterPanel.getPosition();
             newFilterPanel = (UIPanelAPI) newSearchableFilterPanel.invoke(
                     oldPanelPos.getWidth(), oldPanelPos.getHeight(), planetList);
-        } catch (RuntimeException | Error e) {
+        } catch (RuntimeException | Error | ReflectiveOperationException e) {
             throw e;
         } catch (Throwable t) {
             throw new AssertionError("unreachable", t);
