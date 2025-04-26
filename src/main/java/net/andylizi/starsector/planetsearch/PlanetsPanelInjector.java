@@ -26,6 +26,7 @@ public final class PlanetsPanelInjector {
 
     private static PlanetsPanelAccess acc_PlanetsPanel;
     private static PlanetFilterPanelAccess acc_PlanetFilterPanel;
+    private static BaseUIComponentAccess acc_BaseUIComponent;
     private static UIPanelAccess acc_UIPanel;
     private static TextFieldAccess acc_TextField;
     private static PositionAccess acc_Position;
@@ -37,6 +38,7 @@ public final class PlanetsPanelInjector {
         if (acc_PlanetFilterPanel == null) acc_PlanetFilterPanel = new PlanetFilterPanelAccess(
                 acc_PlanetsPanel.planetsFilterPanelType());
         if (acc_UIPanel == null) acc_UIPanel = new UIPanelAccess(planetsPanel.getClass());
+        if (acc_BaseUIComponent == null) acc_BaseUIComponent = new BaseUIComponentAccess(planetsPanel.getClass());
         if (acc_Position == null) acc_Position = new PositionAccess(planetsPanel.getPosition().getClass());
 
         acc_PlanetsPanel.createUI(planetsPanel);
@@ -62,6 +64,7 @@ public final class PlanetsPanelInjector {
 
         acc_Position.set(newFilterPanel.getPosition(), oldFilterPanel.getPosition());
         acc_PlanetsPanel.setPlanetFilterPanel(planetsPanel, newFilterPanel);
+        acc_BaseUIComponent.setOpacity(newFilterPanel, acc_BaseUIComponent.getOpacity(oldFilterPanel));
         acc_UIPanel.remove(planetsPanel, oldFilterPanel);
         planetsPanel.addComponent(newFilterPanel);
     }
