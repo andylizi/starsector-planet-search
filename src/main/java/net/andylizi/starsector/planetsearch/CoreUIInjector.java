@@ -87,7 +87,7 @@ public final class CoreUIInjector {
                 UIPanelAPI oldTab = acc_CoreUI.getCurrentTab(coreUI);
                 Object result = method.invoke(originalListener, args);
                 UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
-                if (currentTab != null && (oldTab == null || oldTab.getClass() != currentTab.getClass())) {
+                if (currentTab != null && (oldTab != currentTab)) {
                     injectIntelPanel(currentTab);
                 }
                 return result;
@@ -102,12 +102,19 @@ public final class CoreUIInjector {
     private static IntelPanelAccess acc_IntelPanel;
 
     private static void injectIntelPanel(UIPanelAPI intelPanel) throws ReflectiveOperationException {
-        if (acc_IntelPanel == null) acc_IntelPanel = new IntelPanelAccess(intelPanel.getClass());
-        if (acc_IntelPanel.intelPanelType() != intelPanel.getClass()) {
-            // When the player is dragging the sector map around and presses E without releasing the mouse,
-            // the Intel button won't do anything, and the current tab won't be Intel in that case.
+        try {
+            if (acc_IntelPanel == null) acc_IntelPanel = new IntelPanelAccess(intelPanel.getClass());
+        } catch (NoSuchMethodException ex) {
+            // This is probably not the Intel panel
             return;
         }
+
+        if (acc_IntelPanel.intelPanelType() != intelPanel.getClass()) {
+            // When the player is dragging the sector map around and presses E without releasing the mouse,
+            // the Intel button won't do anything, so the current tab won't be Intel in that case.
+            return;
+        }
+
         UIPanelAPI planetsPanel = acc_IntelPanel.getPlanetsPanel(intelPanel);
         try {
             PlanetsPanelInjector.inject(planetsPanel);

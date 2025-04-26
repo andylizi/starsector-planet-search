@@ -43,13 +43,17 @@ public final class PlanetsPanelInjector {
 
         acc_PlanetsPanel.createUI(planetsPanel);
         UIPanelAPI planetList = acc_PlanetsPanel.getPlanetList(planetsPanel);
-        UIPanelAPI oldFilterPanel = acc_PlanetsPanel.getPlanetFilterPanelPanel(planetsPanel);
+        UIPanelAPI oldFilterPanel = acc_PlanetsPanel.getPlanetFilterPanel(planetsPanel);
         if (planetList == null || oldFilterPanel == null)
             throw new NullPointerException("fields was not initialized by createUI()");
 
-        if (newSearchableFilterPanel == null) newSearchableFilterPanel =
-                SearchablePlanetFilterPanelFactory.create(acc_PlanetsPanel.planetsFilterPanelType(),
-                        acc_PlanetsPanel.planetsListType(), acc_Position.positionType());
+        if (newSearchableFilterPanel == null) {
+            newSearchableFilterPanel =
+                    SearchablePlanetFilterPanelFactory.create(acc_PlanetsPanel.planetsFilterPanelType(),
+                            acc_PlanetsPanel.planetsListType(), acc_Position.positionType());
+        } else if (newSearchableFilterPanel.type().returnType().isAssignableFrom(oldFilterPanel.getClass())) {
+            return; // Already injected
+        }
 
         UIPanelAPI newFilterPanel;
         try {

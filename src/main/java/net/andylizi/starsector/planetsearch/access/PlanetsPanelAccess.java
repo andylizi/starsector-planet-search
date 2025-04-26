@@ -87,7 +87,7 @@ public class PlanetsPanelAccess {
         }
     }
 
-    public UIPanelAPI getPlanetFilterPanelPanel(UIPanelAPI planetsPanel) {
+    public UIPanelAPI getPlanetFilterPanel(UIPanelAPI planetsPanel) {
         try {
             return (UIPanelAPI) this.f_planetFilterPanel_get.invoke(planetsPanel);
         } catch (RuntimeException | Error ex) {
