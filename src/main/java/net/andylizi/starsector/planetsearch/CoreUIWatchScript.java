@@ -42,32 +42,39 @@ public class CoreUIWatchScript implements EveryFrameScriptWithCleanup {
             CoreUIAPI core = null;
 
             if (dialog != null) {
-                if (acc_InteractionDialog == null) {
+                if (acc_InteractionDialog == null) try {
                     Class<? extends InteractionDialogAPI> dialogType = dialog.getClass();
                     // Guard against other implementations of InteractionDialogAPI
                     if (dialogType.getName().startsWith("com.fs.starfarer.ui.newui.")) {
                         acc_InteractionDialog = new InteractionDialogAccess(dialogType);
                     }
+                } catch (Throwable t) {
+                    throw new PlanetSearchException("reading InteractionDialog", t);
                 }
 
                 if (acc_InteractionDialog != null) core = acc_InteractionDialog.getCoreUI(dialog);
             }
 
             if (core == null) {
-                if (acc_CampaignState == null) acc_CampaignState = new CampaignStateAccess();
+                if (acc_CampaignState == null) try {
+                    acc_CampaignState = new CampaignStateAccess();
+                } catch (Throwable t) {
+                    throw new PlanetSearchException("reading CampaignState", t);
+                }
                 core = acc_CampaignState.getCore(campaignUI);
             }
 
             if (core != current) {
-                if (core != null) CoreUIInjector.inject(core);
+                if (core != null) try {
+                    CoreUIInjector.inject(core);
+                } catch (Throwable t) {
+                    throw new PlanetSearchException("injecting CoreUI", t);
+                }
                 current = core;
             }
         } catch (PlanetSearchException e) {
             this.done = true;
             throw e;
-        } catch (Throwable t) {
-            this.done = true;
-            throw new PlanetSearchException("injecting CoreUI", t);
         }
     }
 

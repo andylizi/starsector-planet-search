@@ -18,8 +18,10 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Objects;
 
 public final class CoreUIInjector {
     private static final Logger logger = Logger.getLogger(CoreUIInjector.class);
@@ -38,7 +40,8 @@ public final class CoreUIInjector {
 
         if (acc_Button == null) acc_Button = new ButtonAccess(intelButton.getClass());
         Object originalListener = acc_Button.getListener(intelButton);
-        if (Proxy.isProxyClass(originalListener.getClass())) {
+        if (Proxy.isProxyClass(originalListener.getClass()) &&
+                Proxy.getInvocationHandler(originalListener) instanceof IntelButtonHandler) {
             return false; // already injected
         }
 
@@ -58,10 +61,8 @@ public final class CoreUIInjector {
         if (intelButton == null) return false;
 
         Object listener = acc_Button.getListener(intelButton);
-        if (!Proxy.isProxyClass(listener.getClass())) return false;
-
-        InvocationHandler handler = Proxy.getInvocationHandler(listener);
-        if (handler instanceof IntelButtonHandler h) {
+        if (Proxy.isProxyClass(listener.getClass()) &&
+                Proxy.getInvocationHandler(listener) instanceof IntelButtonHandler h) {
             acc_Button.setListener(intelButton, h.originalListener);
             logger.info("CoreUI uninjected");
             return true;
@@ -69,8 +70,8 @@ public final class CoreUIInjector {
         return false;
     }
 
-    private static class IntelButtonHandler implements InvocationHandler {
-        final CoreUIAPI coreUI;
+    static class IntelButtonHandler implements InvocationHandler {
+        private final CoreUIAPI coreUI;
         final Object originalListener;
 
         IntelButtonHandler(@NotNull CoreUIAPI coreUI, @NotNull Object originalListener) {
@@ -79,23 +80,31 @@ public final class CoreUIInjector {
         }
 
         @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws PlanetSearchException {
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            // ActionListener interface only has one method: actionPerformed().
+            // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
+            // which then updates the currentTab. And that's our target here.
+            UIPanelAPI previousTab = acc_CoreUI.getCurrentTab(coreUI);
+
+            Object result;
             try {
-                // ActionListener interface only has one method: actionPerformed().
-                // In the original listener, a new Intel panel is created and passed to showPanelAsDialog(),
-                // which then updates the currentTab. And that's our target here.
-                UIPanelAPI oldTab = acc_CoreUI.getCurrentTab(coreUI);
-                Object result = method.invoke(originalListener, args);
-                UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
-                if (currentTab != null && (oldTab != currentTab)) {
-                    injectIntelPanel(currentTab);
-                }
-                return result;
-            } catch (PlanetSearchException e) {
-                throw e;
-            } catch (Throwable t) {
-                throw new PlanetSearchException("injecting intel panel", t);
+                result = method.invoke(originalListener, args);
+            } catch (InvocationTargetException e) {
+                throw Objects.requireNonNullElse(e.getCause(), e);
             }
+
+            UIPanelAPI currentTab = acc_CoreUI.getCurrentTab(coreUI);
+            if (currentTab != null && (previousTab != currentTab)) {
+                try {
+                    injectIntelPanel(currentTab);
+                } catch (PlanetSearchException e) {
+                    throw e;
+                } catch (Throwable t) {
+                    throw new PlanetSearchException("injecting intel panel", t);
+                }
+            }
+            return result;
+
         }
     }
 

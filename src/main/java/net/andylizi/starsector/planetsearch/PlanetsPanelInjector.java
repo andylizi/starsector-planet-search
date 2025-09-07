@@ -108,7 +108,9 @@ public final class PlanetsPanelInjector {
                 String methodName = method.getName();
                 if ("charTyped".equals(methodName) || "backspacePressed".equals(methodName) ||
                         "textChanged".equals(methodName)) {
-                    acc_PlanetFilterPanel.updatePlanetList(self);
+                    try {
+                        acc_PlanetFilterPanel.updatePlanetList(self);
+                    } catch (Throwable ignored) {}
                 }
                 return method.getDeclaringClass() == Object.class ? method.invoke(this, args) : null;
             }
