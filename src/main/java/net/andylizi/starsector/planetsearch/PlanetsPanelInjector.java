@@ -76,10 +76,22 @@ public final class PlanetsPanelInjector {
     private static final String SEARCH_FILTER_PARAM_KEY = "search_term";
 
     static final PlanetSearchData.PlanetFilter SEARCH_FILTER = new PlanetSearchData.PlanetFilter() {
+        private static boolean containsIgnoreCase(String haystack, String needle) {
+            if (haystack == null || needle == null) return false;
+            if (needle.isEmpty()) return true;
+            int len = needle.length();
+            int max = haystack.length() - len;
+            for (int i = 0; i <= max; i++) {
+                if (haystack.regionMatches(true, i, needle, 0, len))
+                    return true;
+            }
+            return false;
+        }
+
         @Override
         public boolean accept(SectorEntityToken entity, Map<String, String> params) {
             var search = params.get(SEARCH_FILTER_PARAM_KEY);
-            return search == null || entity.getName().toLowerCase().contains(search);
+            return search == null || containsIgnoreCase(entity.getName(), search);
         }
 
         @Override
@@ -110,7 +122,8 @@ public final class PlanetsPanelInjector {
                         "textChanged".equals(methodName)) {
                     try {
                         acc_PlanetFilterPanel.updatePlanetList(self);
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable ignored) {
+                    }
                 }
                 return method.getDeclaringClass() == Object.class ? method.invoke(this, args) : null;
             }
@@ -154,16 +167,20 @@ public final class PlanetsPanelInjector {
     }
 
     static void __hook_getParams(Map<String, String> params, TextFieldAPI searchBox) {
-        String term;
-        if (searchBox != null && !(term = searchBox.getText().trim().toLowerCase()).isEmpty()) {
-            params.put(SEARCH_FILTER_PARAM_KEY, term);
+        if (searchBox != null) {
+            params.put(SEARCH_FILTER_PARAM_KEY, searchBox.getText().trim());
+        } else {
+            params.remove(SEARCH_FILTER_PARAM_KEY);
         }
     }
 
     static void __hook_syncWithParams(TextFieldAPI searchBox, Map<String, String> params) {
         if (searchBox == null) return;
-        String term;
-        searchBox.setText((params != null && (term = params.get(SEARCH_FILTER_PARAM_KEY)) != null) ? term : "");
+        if (params == null) {
+            searchBox.setText("");
+        } else {
+            searchBox.setText(Objects.requireNonNullElse(params.get(SEARCH_FILTER_PARAM_KEY), ""));
+        }
     }
 
     private PlanetsPanelInjector() {throw new AssertionError();}
