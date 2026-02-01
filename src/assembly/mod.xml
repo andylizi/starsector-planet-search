@@ -25,12 +25,4 @@
       <outputDirectory>/${project.name}/jars</outputDirectory>
     </fileSet>
   </fileSets>
-  <dependencySets>
-    <dependencySet>
-      <includes>
-        <include>org.ow2.asm:asm</include>
-      </includes>
-      <outputDirectory>/${project.name}/jars</outputDirectory>
-    </dependencySet>
-  </dependencySets>
 </assembly>
